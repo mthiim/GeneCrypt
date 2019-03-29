@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Required meta tags -->
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<!-- Bootstrap CSS -->
+<link rel="stylesheet"
+	href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+	integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+	crossorigin="anonymous" />
+<link rel="stylesheet" href="css/bs-stepper.min.css" />
+<title>GeneCrypt</title>
+<script src="js/code.js"></script>
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+</head>
+<body>
+	<div class="container">
+
+		<div class="row">
+			<div class="col-lg-12 col-md-12 col-sm-12 text-justify">
+				<p class="lead">
+				<h2>
+					<img alt="GeneCrypt logo" src="genecrypt.png"
+						style="margin-left: 0px;" /> Confidential Computing Challenge
+					entry
+				</h2>
+				<br />
+				<p style="text-align: center;">
+					<b>Try out a live proof-of-concept of my Confidential Computing Challenge Entry 'GeneCrypt',
+						where you can encrypt and upload the code for a gene, under a key you generate and control here in your browser! You can then decide if you wish to grant an Asylo enclave access to
+						the key so that it can analyze the gene and return some limited information about it.<sup>*</sup></b>
+				</p>
+
+				<p>In this PoC, the browser takes the role of the agent of the end-user. Using Web Crypto API, the
+				code on this page generates and stores the encryption key that protects the genome when stored "at rest" in a
+				Gene Bank. This allows the end-user to have full control of what happens to their genomic data. In a real-life implementation, the user agent would likely
+					be an app running on a mobile device, probably using hardware-secured key stores.
+					The main point of the GeneCrypt concept is that the 
+					agent can remotely attest the Asylo enclave and ask the user if it should be allowed to run some analysis and return the result. This is the only way the genome can be accessed. The mechanism
+					doesn't rely on the security of the gene bank, and the gene bank doesn't learn the result of the analysis, 
+					since this is encrypted as well, under a key specified when launching the enclave (and quoted during attestation).
+					In this example, the public key is that of the end-user (generated here in the browser). It could also be the
+					public key of a doctor or other person trusted by the end-user to receive the analysis result.</p>
+				<p>
+					All source code (including enclave code) available on <a href="https://github.com/mthiim/GeneCrypt">GitHub</a>.
+				</p>
+				<p>
+					Tested as working on the latest Chrome, Safari and Mozilla Firefox browsers. Positively doesn't work on Microsoft Edge, due to a <a href="https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/11348074/">bug</a> in the GCM-AES implementation.
+				</p>
+			</div>
+		</div>
+		<div id="stepper1" class="bs-stepper">
+
+			<div class="bs-stepper-header" role="tablist">
+
+				<!-- your steps here -->
+				<div class="step" data-target="#enduser-setup-part">
+					<button type="button" class="step-trigger" role="tab"
+						aria-controls="enduser-setup-part" id="enduser-setup-part-trigger">
+						<span class="bs-stepper-circle">1</span> <span
+							class="bs-stepper-label">End-user setup</span>
+					</button>
+				</div>
+				<div class="line"></div>
+				<div class="step" data-target="#sequencing-part">
+					<button type="button" class="step-trigger" role="tab"
+						aria-controls="sequencing-part" id="sequencing-part-trigger">
+						<span class="bs-stepper-circle">2</span> <span
+							class="bs-stepper-label">Genome upload</span>
+					</button>
+				</div>
+				<div class="step" data-target="#analysis-request-part">
+					<button type="button" class="step-trigger" role="tab"
+						aria-controls="analysis-request-part"
+						id="analysis-request-part-trigger">
+						<span class="bs-stepper-circle">3</span> <span
+							class="bs-stepper-label">Analysis request</span>
+					</button>
+				</div>
+				<div class="step" data-target="#request-processing-part">
+					<button type="button" class="step-trigger" role="tab"
+						aria-controls="request-processing-part"
+						id="request-processing-part-trigger">
+						<span class="bs-stepper-circle">4</span> <span
+							class="bs-stepper-label">Enclave processing</span>
+					</button>
+				</div>
+
+			</div>
+			<div class="bs-stepper-content">
+				<!-- your steps content here -->
+				<div id="enduser-setup-part" class="content" role="tabpanel"
+					aria-labelledby="enduser-setup-part-trigger">
+					<div class="well"
+						style="margin-left: 30px; background-color: #f0f0f0; padding: 10px">
+						<p>In this first step, we will initialize the end-user
+							agent/device which will be used to guard and control the
+							cryptographic keys for the genome. We will start by generating
+							(using the Web Crypto API) an asymmetric key pair (in this
+							case, RSA 2048 bits). The private key is only stored on the
+							client-side, i.e. in the browser. The public key is registered
+							with the gene bank.
+							This simulates a real-life scenario where the end-user installs an app on their mobile device, which then generates the key pair
+							to control their genetic data, and registers an account with the gene bank. When submitting biological samples to the
+							gene bank, the data would be encrypted by the end-user's public key. We will look closer into this in the next
+							step.</p>
+						<div id="rsaspinner" class="spinner-border" role="status"
+							style="margin-left: 100px; margin-bottom: 10px" hidden>
+							<span class="sr-only">Loading...</span>
+						</div>
+						<p style="margin-left: 50px">
+							<button id="generatersa" class="btn btn-primary"
+								onclick="generatersa();">Generate end-user key pair</button>
+						</p>
+						<div id="rsakeycontent" hidden>
+							<table class="table">
+								<tr>
+									<td><img alt="Checkmark icon"
+										src="icons8-checkmark-40.png" /></td>
+									<td><div id="rsakeytext">
+											Key generated and user and public registered with the backend (gene bank). Public key
+											hash:
+											<code>XXX</code>
+											. The private key is only available in the browser. In a real
+											implementation, security mechanisms would obviously be
+											required for protecting the local private key and also
+											mechanisms for key recovery.
+										</div></td>
+								</tr>
+							</table>
+						</div>
+					</div>
+					<br>
+					<p>
+						<button id="next1" class="btn btn-primary"
+							onclick="stepper1.next()" disabled>Next</button>
+					</p>
+				</div>
+				<div id="sequencing-part" class="content" role="tabpanel"
+					aria-labelledby="sequencing-part-trigger">
+					<div class="well"
+						style="margin-left: 30px; background-color: #f0f0f0; padding: 10px">
+						<p>As the second step, we will upload a genome to be stored on the backend, in
+							an imaginary gene bank. In real
+							life, the user would submit a biological sample for sequencing.
+							The gene bank would generate a unique, symmetric encryption key
+							(AES-256) and encrypt this specific genome with that. The
+							symmetric key would itself be encrypted with the end-user public
+							key we generated and registered in the previous step. The gene
+							bank would only store the encrypted genome and the encrypted,
+							symmetric genome encryption key. In this PoC, we will simulate
+							this by encrypting the genetic data in the browser, under a
+							random symmetric key, and upload both the encrypted genetic data
+							as well as the encrypted, symmetric genome encryption key, encrypted under the
+							public key we generated in the previous step.
+							To
+							make things more interesting, you can now select the genetic data
+							to encrypt and upload. We imagine this is a gene that has two variants, one
+							associated with a high risk of some disease, and one with normal risk. 
+							The normal risk variant has 'A' as its fourth letter in the genetic code, whereas all other
+							letters in this position are associated with higher risk of disease.
+							This variance pattern (a single letter/nucleotide difference) is known as a Single Nucleotide
+							Polymorphism and is a common type of genetic variance associated with disease. Of course, enclaves can be developed for the detection of more
+							complicate genetic variants for other diseases.
+							
+							Using the radio buttons below, you can select the
+							variant of the gene to encrypt and upload (or hand edit it here).
+
+						
+						<div class="form-group" style="margin-left: 20px">
+
+
+							<p>
+								<input id="lowerrisk" name="risk" type="radio" checked="checked"
+									onclick="lowerrisk()" />Lower disease-risk variant (
+								<code>
+									<span style="color: black;">ACG<span style="color: red;">A</span>TTACCACATGGGGTTTTTTG
+									</span>
+								</code>
+								)
+							</p>
+							<p>
+								<input id="higherrisk" name="risk" type="radio"
+									onclick="higherrisk()" />Higher disease-risk variant (
+								<code>
+									<span style="color: black;">ACG<span style="color: red;">T</span>TTACCACATGGGGTTTTTTG
+									</span>
+								</code>
+								)
+							</p>
+							<p>
+								<textarea class="form-control rounded-0" id="genedata" rows="2"
+									cols="40" style="font-family: monospace;">
+						</textarea>
+							</p>
+						</div>
+						<div id="uploadspinner" class="spinner-border" role="status"
+							hidden style="margin-left: 100px; margin-bottom: 10px">
+							<span class="sr-only">Loading...</span>
+						</div>
+						<p style="margin-left: 50px">
+							<button id="uploadgenome" class="btn btn-primary"
+								onclick="uploadgenome();">Encrypt and upload</button>
+						</p>
+						<div id="uploadcontent" hidden>
+							<table class="table">
+								<tr>
+									<td><img alt="Checkmark icon"
+										src="icons8-checkmark-40.png" /></td>
+									<td><div id="uploadtext">Genome encrypted and uploaded, along with the encrypted symmetric key. The gene bank only holds encrypted values and is not able to decrypt the genome.</div></td>
+								</tr>
+							</table>
+						</div>
+					</div>
+					<br>
+					<p>
+						<button id="next2" class="btn btn-primary"
+							onclick="stepper1.next()" disabled>Next</button>
+					</p>
+				</div>
+				<div id="analysis-request-part" class="content" role="tabpanel"
+					aria-labelledby="analysis-request-part-trigger">
+					<div class="well"
+						style="margin-left: 30px; background-color: #f0f0f0; padding: 10px">
+						<p>As the third step, we will simulate the launching of a request for allowing
+							a specific enclave to decrypt and analyze the user's genome. The enclave is able to screen
+							for the genetic variant discussed in the previous step and returns just an encrypted true/false value regarding
+							the prescence of the genetic variance.
+							If you press the "Launch enclave" button below, the Asylo-enclave is
+							launched. It is given as a parameter a nonce and 
+							the public key it should use for encrypting the genome (in this PoC, this is the public key
+							for the end-user but in real-life could be the key of e.g. the patient's doctor).
+							As part of its initialization, the enclave will generate an ephemeral key pair (session key pair)
+							for secure communication with the user agent (this page). The enclave will produce a quote (suitable for remote attestation)
+							containing its launch parameters as well as the public key of the key pair.
+							Since Asylo doesn't yet implement remote attestation, in this PoC, it is simulated by simply signing 
+							the data to be quoted with a
+							software signing key in the backend (rather than an "endorsement key" in hardware), where the public key is built into this page. 
+							The Asylo enclave is kept running and in the next step you can decide whether to grant it access to decrypt the genome and run the analysis!
+						<div class="form-group" style="margin-left: 20px">
+							<div id="requestspinner" class="spinner-border" role="status"
+								hidden style="margin-left: 100px; margin-bottom: 10px">
+								<span class="sr-only">Loading...</span>
+							</div>
+							<p style="margin-left: 50px">
+								<button id="requestbutton" class="btn btn-primary"
+									onclick="initiaterequest();">Launch enclave</button>
+							</p>
+							<div id="requestcontent" hidden>
+								<table class="table">
+									<tr>
+										<td><img alt="Checkmark icon"
+											src="icons8-checkmark-40.png" /></td>
+										<td><div id="requesttext">
+												The remote Asylo enclave was launched and it has generated a session key 
+												and returned its quoted response. The
+												remote attestation signature was verified successfully. Below is the
+												attestation data:
+												<p>
+													Quoter:
+													<code>YYY</code>
+												</p>
+												<p>
+													Enclave:
+													<code>XXX</code>
+												</p>
+												<p>
+													(Startup parameter) nonce:
+													<code>AAA</code>
+												</p>
+												<p>
+													(Startup parameter) hash of receiver public key:
+													<code>BBB</code>
+												</p>
+												<p>
+													Hash of enclave's session public key:
+													<code>ZZZ</code>
+												</p>
+
+												<p>If you approve the request in the next step, the enclave
+													will receive a copy of the genome key, encrypted
+													under the enclave's session key, shown above.
+											</div></td>
+									</tr>
+								</table>
+							</div>
+						</div>
+						<br>
+						<p>
+							<button id="next3" class="btn btn-primary"
+								onclick="stepper1.next()" disabled>Next</button>
+						</p>
+					</div>
+				</div>
+				<div id="request-processing-part" class="content" role="tabpanel"
+					aria-labelledby="request-processing-part-trigger">
+					<div class="well"
+						style="margin-left: 30px; background-color: #f0f0f0; padding: 10px">
+						<p>As the final step, you can now permit the enclave we launched in the previous step, to 
+						screen the genome for the presence of the genetic variant. If you press
+						the approve button below, the genome's encryption key will be re-encrypted under the Enclave's session public key, allowing it to analyze the genome. The enclave then returns the 
+						result of the analysis, encrypted under the recipient public key, i.e. the public key that was specified as a parameter when launching the enclave, and which was part of the quoted data from the enclave's launch output (
+						in this case the end-user's own public key).
+						<div class="form-group" style="margin-left: 20px">
+							<div id="processingspinner" class="spinner-border" role="status"
+								hidden style="margin-left: 100px; margin-bottom: 10px">
+								<span class="sr-only">Loading...</span>
+							</div>
+							<p style="margin-left: 50px">
+								<button id="processingbutton" class="btn btn-primary"
+									onclick="processing();">Approve request and
+									run enclave processing</button>
+							</p>
+							<div id="processingcontent" hidden>
+								<table class="table">
+									<tr>
+										<td><img alt="Checkmark icon"
+											src="icons8-checkmark-40.png" /></td>
+										<td><div id="processingtext">
+												<p>Encrypted enclave execution result received and successfully decrypted!</p>
+												<p>Encrypted response from enclave: <code>XXX</code></p>
+												<p>Decrypted response from enclave (i.e. is this a high risk variant? Should correspond to what you put in, in step 2): `<code>YYY</code>` </p>
+												<p><b>Thanks for trying out this PoC, where you just had end-to-end secured communication with an Asylo enclave. You can get the source code and read more about the concept on <a href="https://github.com/mthiim/GeneCrypt">GitHub</a></b>.
+											</div></td>
+									</tr>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<footer class="page-footer font-small blue pt-4">
+
+		<!-- Copyright -->
+		<div class="footer-copyright text-center py-3">
+			<p>*) Don't use this for actual genetic data :-)
+			<p>This is an entry for the <a
+				href="https://inthecloud.withgoogle.com/computing-challenge/register.html">Confidential
+				Computing Challenge</a>.
+			<p>
+				Entrant: <a href="mailto:martin@thiim.net">Martin Thiim</a>. <a
+					href="http://pool.sks-keyservers.net/pks/lookup?op=vindex&fingerprint=on&search=0xDF88333A3BEC0DB7">PGP
+					key</a> - fingerprint: 3F19 B0C7 64B5 58FB E17E 1885 DF88 333A 3BEC
+				0DB7
+			</p>
+			
+		</div>
+		<!-- Copyright -->
+		<!-- Optional JavaScript -->
+		<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+		<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+			integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+			crossorigin="anonymous"></script>
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+			integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+			crossorigin="anonymous"></script>
+		<script
+			src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+			integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+			crossorigin="anonymous"></script>
+		<script src="js/bs-stepper.min.js"></script>
+	</footer>
+</body>
+</html>
