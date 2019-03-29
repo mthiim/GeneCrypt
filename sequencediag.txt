@@ -1,0 +1,14 @@
+title GeneCrypt sequence diagram
+
+User agent->Backend:LaunchRequest(Nonce,ReceiverPublicKey)
+Backend->Enclave:Launch(Nonce,ReceiverPublicKey)
+Enclave->Enclave:Generate session key pair
+Enclave->Backend:Quoted [Nonce,ReceiverPublicKey,SessionPublicKey]
+User agent<--Backend:Quoted [Nonce,ReceiverPublicKey,SessionPublicKey]
+User agent->User agent:Validate the remote attestation quote and seek approval from end-user
+User agent->Backend:ExecuteQuery(RencryptedGenomeKey)
+Backend->Enclave:ExecuteQuery(RencryptedGenomeKey,EncryptedGenomeKey,EncryptedGenomeIV)
+Enclave->Backend:QueryResult(Response-encrypted-under-ReceiverPublicKey)
+Backend->Backend:Distribute encrypted result to recipient (for instance end-user or doctor)
+
+
