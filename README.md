@@ -11,7 +11,7 @@ The descriptions below assume that Maven and Docker have already been installed.
 
 The application uses a [MongoDB](https://www.mongodb.com/) database for storing the user genomes and keys.
 
-To easily launch a MongoDB instance, use (data will be stored in `~/data` folder):
+To easily launch a MongoDB instance, use (data will be stored in `~/data` directory):
 
 ```
 docker run -d -p 27017:27017 -v ~/data:/data/db mongo
@@ -52,10 +52,10 @@ The backend application internally defines an `IEnclaveSystem` Java interface. T
 version this should of course be handled by JNI). Note that separate processes are started for all enclave launches and the processes are kept running for 5 minutes so they can satisfy `executeQuery` requests (due to the cryptographic protocol used, the enclave
 holds state between the `launch` and the `executeQuery` call, in particular the session key). 
 
-The root repo folder is a Bazel workspace. The Asylo enclave and driver is stored in the "genecrypt" subfolder. To build the enclaves you can run:
+The root of the repository is a Bazel workspace. The Asylo enclave and driver is stored in the "genecrypt" subdirectory. To build the enclaves you can run:
 
 ```
-export MY_PROJECT=/path/to/<REPO_ROOT_FOLDER>
+export MY_PROJECT=/path/to/<REPO_CHECKOUT>
 docker run -it --rm     -v bz:/root/.cache/bazel     -v "${MY_PROJECT}":/opt/my-project     -w /opt/my-project     gcr.io/asylo-framework/asylo     bazel build --config=enc-sim  //genecrypt
 ```
 
