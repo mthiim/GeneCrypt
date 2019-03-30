@@ -1,13 +1,15 @@
 # GeneCrypt
 
-This is the source code for the GeneCrypt entry for the Google Confidential Computing Challenge. Try out the running application at https://genecrypt.thiim.net/. Below is described how to build and run the application from source.
+This is the source code for the GeneCrypt entry for the Confidential Computing Challenge. Try out the running application at https://genecrypt.thiim.net/. In the following, it is described how to build and run the application from source.
 
 The application consists of two main parts: the GeneCrypt backend application and the Asylo enclave and host driver which is used by the backend application.
 Both are stored in this repo.
 
+The descriptions below assume that Maven and Docker have already been installed.
+
 ## The backend database
 
-The application uses a [MongoDB](https://www.mongodb.com/) database for storing the user genomes etc. 
+The application uses a [MongoDB](https://www.mongodb.com/) database for storing the user genomes and keys.
 
 To easily launch a MongoDB instance, use (data will be stored in `~/data` folder):
 
@@ -19,7 +21,7 @@ The default configuration of the application expects to access this database on 
 
 ## The backend application
 
-The backend application is a Spring Boot application. This application cintans and serves the frontend index.html and associated JavaScript code.
+The backend application is a Spring Boot application. This application contains and serves the frontend index.html and associated JavaScript code.
 The application can be built using Maven, by executing:
 
 ```
@@ -34,20 +36,20 @@ You can run the application directly from the command line:
 java -jar target/gcbackend-1.0.0-SNAPSHOT.jar
 ```
 
-In this configuration, it will use a Java-simulation of the enclave system.  See [below](#use-of-azylo-enclaves)
-for how to build and enable use of the Azylo-enclave instead.
+In this configuration, it will use a Java-simulation of the enclave system.  See [below](#use-of-asylo-enclaves)
+for instructions how to build and enable use of the Asylo enclave.
 
-If you wish to use another database host than `127.0.0.1:27017` you can add the option `--spring.data.mongodb.uri=<uri>` where `<uri>` could be e.g. `mongodb://127.0.0.1:27017/test`. If you started the MongoDB Docker image as per the above, this is not necessary.
+If you wish to use another database host than `127.0.0.1:27017` you can add the option `--spring.data.mongodb.uri=<uri>` where `<uri>` could be e.g. `mongodb://127.0.0.1:27017/test`. If you started the MongoDB Docker image as per the above, it will just work.
 
 The server will by default listen on port `8080` but this can be modified using `--server.port=<port>`.
 
-**Note that because the frontend part uses WebCrypto, the page will need to be served either from `localhost` or `127.0.0.1` or from an HTTPS protected domain, otherwise the browser will not permit the WebCrypto calls.**
+**Note that because the frontend part uses Web Crypto API, the page will need to be served either from `localhost` or `127.0.0.1` or from an HTTPS protected domain, otherwise the browser will not permit the WebCrypto calls.**
 
-## Use of Azylo enclaves
+## Use of Asylo enclaves
 
 The backend application internally defines an `IEnclaveSystem` Java interface. There are two implementations:
-`JavaSimEnclaveSystemImpl` is a 100% Java implementation and is thus useful for debugging the setup, whereas `AsyloEnclaveSystemImpl` works with actual Asylo enclaves. It works by launching the enclave driver process and communicating with it using stdio (in a production
-version this should of course be handled by JNI). Note that separate processes are started for all launches and this process is kept running so it can satisfy `executeQuery` requests (due to the cryptographic protocol used the enclave
+`JavaSimEnclaveSystemImpl` is a 100% Java implementation and is thus useful for debugging the rest of the setup, whereas `AsyloEnclaveSystemImpl` works with actual Asylo enclaves. It works by launching the enclave driver process and communicating with it using stdio (in a production
+version this should of course be handled by JNI). Note that separate processes are started for all enclave launches and the processes are kept running for 5 minutes so they can satisfy `executeQuery` requests (due to the cryptographic protocol used, the enclave
 holds state between the `launch` and the `executeQuery` call, in particular the session key). 
 
 The root repo folder is a Bazel workspace. The Asylo enclave and driver is stored in the "genecrypt" subfolder. To build the enclaves you can run:
@@ -63,7 +65,7 @@ After building, the enclaves are stored inside the Docker volume. You can export
 docker run -it --rm     -v bz:/root/.cache/bazel     -v "${MY_PROJECT}":/opt/my-project     -w /opt/my-project -v "${MY_PROJECT}/enclaves":/enclaves    gcr.io/asylo-framework/asylo  cp -r bazel-bin/genecrypt /enclaves
 ```
 
-When starting the application, you need to specify that you wish to use the Azylo-enclave. This is done by adding the Spring profile `asylo` as follows (this enables `AsyloEnclaveSystemImpl` as mentioned above):
+When starting the application, you need to specify that you wish to use the Asylo-enclave. This is done by adding the Spring profile `asylo` as follows (this enables `AsyloEnclaveSystemImpl` as mentioned above):
 
 ```
 java -Dspring.profiles.active=asylo -jar target/gcbackend-1.0.0-SNAPSHOT.jar
@@ -72,7 +74,7 @@ java -Dspring.profiles.active=asylo -jar target/gcbackend-1.0.0-SNAPSHOT.jar
 The application per default expects to find the enclave and driver in the `./enclaves` sub-directory and will use the command `./genecrypt/genecrypt` for launching the driver, which matches the location if you followed the guide above. 
 However, you can override the location and executable name using the `--enclave.dir=<dir>` and `--enclave.cmd=<cmd>` on the command line or changing the values in `src/main/resources/application.properties`.
 
-To build the Intel SGX version, use `--config=sgx` instead in the build step above. The enclave running on the sample website https://genecrypt.thiim.net is using the `enc-sim` variant, since SGX is not supported by the cloud provider yet. But I have tested and verified that the enclave runs properly under SGX.
+To build the Intel SGX version, use `--config=sgx` instead in the build step above. The enclave running on the sample website https://genecrypt.thiim.net is using the `enc-sim` variant, since SGX is not supported by Google cloud. But I have tested the whole setup and verified that the enclave works under SGX.
   
 ## Remote attestation
 
