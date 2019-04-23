@@ -20,7 +20,11 @@
  */
 package net.thiim.gcbackend;
 
+import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.crypto.Cipher;
 
@@ -45,12 +49,15 @@ import net.thiim.gcbackend.persistence.User;
 import net.thiim.gcbackend.persistence.UserRepository;
 import net.thiim.gcbackend.sessions.Session;
 import net.thiim.gcbackend.sessions.SessionControl;
-
 @RestController
 public class EndpointController {
 	private static BouncyCastleProvider prov = new BouncyCastleProvider();
+	@Autowired
 	private UserRepository repository;
+	@Autowired
 	private IEnclaveSystem enclaveSystem;
+	@Autowired
+	private SessionControl sessionControl;
 	
 	static {
 		// Warm the provider
@@ -62,13 +69,7 @@ public class EndpointController {
 			throw new RuntimeException(e);
 		} 
 	}
-
 	
-	public EndpointController(UserRepository repository, IEnclaveSystem enclaveSystem)
-	{
-		this.repository = repository;
-		this.enclaveSystem = enclaveSystem;
-	}
 	
 	@RequestMapping(value = "/users", method = RequestMethod.PUT)
     public String newUser(String pubkey) {
@@ -103,17 +104,17 @@ public class EndpointController {
     	}
     }
     
-    @RequestMapping(value = "/users/{userid}/launchenclave", method = RequestMethod.POST)
-    public ResponseEntity<EnclaveLaunchData> launchEnclave(@PathVariable String userid, @RequestParam String nonce, @RequestParam String receiverPublicKey) {
+    @RequestMapping(value = "/users/{id}/launchenclave", method = RequestMethod.POST)
+    public ResponseEntity<EnclaveLaunchData> launchEnclave(@PathVariable String id, @RequestParam String nonce, @RequestParam String receiverPublicKey) {
     	try {
-        	Optional<User> u = repository.findById(userid);
+        	Optional<User> u = repository.findById(id);
         	if(u.isPresent()) {
         		User user = u.get();
         		LaunchRequest lr = new LaunchRequest();
         		lr.nonce = nonce;
         		lr.receiverPublicKey = receiverPublicKey;
         		LaunchResponse response = enclaveSystem.launch(lr);
-        		Session session = SessionControl.getInstance().createSession();
+        		Session session = sessionControl.createSession();
         		session.setEnclaveInstance(response.instance);
         		session.setUser(user);
         		EnclaveLaunchData eld = new EnclaveLaunchData(response.quoteData, response.quoteSignature, user.getEncryptedGenomeKey(), session.getID());
@@ -133,7 +134,7 @@ public class EndpointController {
     @RequestMapping(value = "/sessions/{sessionID}/executeQuery", method = RequestMethod.POST)
     public ResponseEntity<String> executeQuery(@PathVariable String sessionID, @RequestParam String reencryptedGenomeEncryptionKey) {
     	try {
-    		Session session = SessionControl.getInstance().getSession(sessionID);
+    		Session session = sessionControl.getSession(sessionID);
     		if(session == null) {
     			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     		}
@@ -152,4 +153,5 @@ public class EndpointController {
     		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
     	}
     }
+    
 }

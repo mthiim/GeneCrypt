@@ -29,9 +29,9 @@ public class Session
 	private EnclaveInstance enclaveInstance;
 	private User user;
 
-	public Session() {
+	public Session(long creationTime) {
 		this.uuid = UUID.randomUUID();
-		this.creationTime = System.currentTimeMillis();
+		this.creationTime = creationTime;
 	}
 
 	public String getID() {

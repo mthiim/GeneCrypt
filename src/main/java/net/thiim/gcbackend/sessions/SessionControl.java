@@ -22,58 +22,62 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 /**
  * Very quick and dirty, poor man's session control for the REST interface (we need to hit the same running enclave for launch and executeQuery states) 
  * and for ensuring we kill the processes etc.
  * Not suitable for production :-)
  *
  */
+@Component
 public class SessionControl {
 	private Map<String, Session> sessions = Collections.synchronizedMap(new HashMap<String, Session>());
+	private int lifetime;
+	private TimeSource timeSource;
 	
+	class InstanceKiller implements Runnable
 	{
-		Runnable r = new Runnable() {
-			@Override
-			public void run() {
-				while(true) {
-					try {
-						Thread.sleep(30000);
-						Iterator<String> it = sessions.keySet().iterator();
-						while(it.hasNext()) {
-							String x = it.next();
-							Session sess = sessions.get(x);
-							long age = System.currentTimeMillis() - sess.creationTime;
-							if(age > 300000) {
-								System.out.println("Purging: " + x);
-								it.remove(); 
-								try {
-									sess.kill();
-								}
-								catch(Exception ex)
-								{
-									ex.printStackTrace();
-								}
+		@Override
+		public void run() {
+			while(true) {
+				try {
+					Thread.sleep(5000);
+					Iterator<String> it = sessions.keySet().iterator();
+					while(it.hasNext()) {
+						String x = it.next();
+						Session sess = sessions.get(x);
+						long age = timeSource.getTime() - sess.creationTime;
+						if(age > lifetime) {
+							System.out.println("Purging: " + x);
+							it.remove(); 
+							try {
+								sess.kill();
+							}
+							catch(Exception ex)
+							{
+								ex.printStackTrace();
 							}
 						}
-					} catch (InterruptedException e) {
 					}
+				} catch (InterruptedException e) {
 				}
 			}
-		};
-		Thread t = new Thread(r);
-		t.start();
+		}
+		
 	}
-	
-	private static SessionControl instance = new SessionControl();
-	
-	public static SessionControl getInstance()
+	public SessionControl(@Value("${session.lifetime}") int lifetime, TimeSource timeSource)
 	{
-		return instance;
+		this.lifetime = lifetime;
+		this.timeSource = timeSource;
+		Thread t = new Thread(new InstanceKiller(), "InstanceKiller");
+		t.start();
 	}
 	
 	public Session createSession()
 	{
-		Session session = new Session();
+		Session session = new Session(timeSource.getTime());
 		sessions.put(session.uuid.toString(), session);
 		return session;
 	}
