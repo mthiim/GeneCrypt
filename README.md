@@ -105,4 +105,4 @@ case for confidential computing since it's an area where the data processed is h
 raw access to the whole data is rarely required by patients or doctors. Usually, some specific
 information is sought and this information can be produced by executing an algorithm on the raw data. This
 execution might well take place inside an enclave, under the permission and control of the end-user.
-  
+[LinkedIn](https://www.linkedin.com/in/martinthiim)  
