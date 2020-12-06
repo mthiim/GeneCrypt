@@ -1,6 +1,6 @@
 # GeneCrypt
 
-This is the source code for my entry into the Confidential Computing Challenge. Try out the running application at https://genecrypt.thiim.net/. I didn't win but ended up getting an honorable mention: https://cloud.google.com/blog/products/identity-security/announcing-the-winners-of-the-confidential-computing-challenge.
+This is the source code for my entry into the Confidential Computing Challenge. I didn't win but ended up getting an honorable mention: https://cloud.google.com/blog/products/identity-security/announcing-the-winners-of-the-confidential-computing-challenge.
 
 My LinkedIn profile: https://www.linkedin.com/in/martinthiim
 
