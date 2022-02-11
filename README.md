@@ -115,9 +115,5 @@ The protocol used is quite simple. Many refinements are possible for a productio
  ![Sequence diagram](resources/SequenceDiagram.png)
 
 ## About the author
-My name is Martin Thiim. I hold an M.Sc. in Bioinformatics (2007) and a B.Sc. in Computer Science and Mathematics (2005). I work as a lead architect on Denmark's eID system NemID and on the successor system MitID. I believe the protection of genetic data is an excellent use
-case for confidential computing since it's an area where the data processed is highly sensitive but where
-raw access to the whole data is rarely required by patients or doctors. Usually, some specific
-information is sought and this information can be produced by executing an algorithm on the raw data. This
-execution might well take place inside an enclave, under the permission and control of the end-user.
+My name is Martin Thiim. I hold an M.Sc. in Bioinformatics (2007) and a B.Sc. in Computer Science and Mathematics (2005). I work as principal architect in Nets / Nexi. 
 [LinkedIn profile](https://www.linkedin.com/in/martinthiim)  
